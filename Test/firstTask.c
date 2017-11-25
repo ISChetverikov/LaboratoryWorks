@@ -47,6 +47,10 @@ double avgBeforeFirstMax(double* array, int length) {
 }
 
 void reverseEnd(double* array, int length, int reversingCount) {
+
+	if (reversingCount > length)
+		return;
+
 	double temp = 0;
 	for (int i = length - reversingCount, j = length - 1; i < j; i++, j--)
 	{
