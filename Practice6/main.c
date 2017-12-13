@@ -105,12 +105,38 @@ double getDistanceToPolygon(Point * polygonVerticesArr, int count, Point point) 
 	return result;
 }
 
+Point * inputPolygon(int * count) {
+	Point * arr;
+
+	printf_s("Please input count of polygon points:\n");
+	scanf_s("%d", count);
+	
+	arr = calloc(*count, sizeof(Point));
+
+	for (int i = 0; i < *count; i++) {
+		printf_s("Input point of polygon:\t");
+		scanf_s("%lf", &arr[i].x);
+		scanf_s("%lf", &arr[i].y);
+	}
+
+	return arr;
+}
+
 int main() {
-	Point p = { -1, -1 };
-	Point A[3] = { { 0,0 }, { 0,1 }, { 1,0 } };
-	double d = getDistanceToPolygon(A, 3, p);
+	int count;
+	double d;
+	Point * poly;
+	Point p;
+	
+	printf_s("Please input point:\t");
+	scanf_s("%lf", &p.x);
+	scanf_s("%lf", &p.y);
+	poly = inputPolygon(&count);
 
-	printf_s("%lf\n", d);
+	d= getDistanceToPolygon(poly, count, p);
 
+	printf_s("\nDistance:\t%lf\n", d);
+
+	free(poly);
 	return 0;
 }
