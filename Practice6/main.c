@@ -101,6 +101,7 @@ double getDistanceToPolygon(Point * polygonVerticesArr, int count, Point point) 
 			
 	}
 
+	free(pProjection);
 	return result;
 }
 
