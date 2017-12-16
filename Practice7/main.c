@@ -136,6 +136,7 @@ int main() {
 	key.outpuRoute = TOP_TO_BOTTOM;
 
 	setlocale(LC_CTYPE, "Russian");
+	system("chcp 1251");
 
 	gets(str);
 	encodedStr = encode(str, key);

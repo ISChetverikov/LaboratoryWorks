@@ -16,15 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
-      <Filter>Resource Files</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="assignment.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="arrays.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
