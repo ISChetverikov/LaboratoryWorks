@@ -22,15 +22,18 @@ int main() {
 	// Cutting the dot
 	str[strlen(str) - 1] = '\0';
 
-	// Finding last word
-	last_word = strrchr(str, ' ');
+	// Finding the last word
+	last_word = strrchr(str, ' ') + 1;
 	printf_s("Last word:\t%s\n", last_word);
 
 	printf_s("Words:\n");
 	word = strtok_s(str, " ", &context);
 	while (word != NULL) {
-		printf("\t%s\n", word);
 		
+		if (strcmp(word, last_word)) {
+			printf("\t%c%s\n", word[strlen(word)-1], word);
+		}
+
 		word = strtok_s(NULL, " ", &context);
 	}
 
