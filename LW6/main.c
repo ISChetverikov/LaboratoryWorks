@@ -4,7 +4,7 @@
 #include <string.h>
 #include <locale.h>
 
-#define LAZY_USER1
+#define LAZY_USER
 
 int main() {
 	Patient patient;
@@ -120,12 +120,16 @@ int main() {
 		PrintPatient(*pPatient);
 	}
 
+#ifndef LAZY_USER
+
 	for (int i = 0; i < count; i++)
 	{
 		FreePatient(patients[i]);
 	}
 
 	return 0;
+
+#endif
 }
 
 
