@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "FirstTask.h"
+#include "SecondTask.h"
+
 
 #define FIRST_FILENAME "first.txt"
 #define FIRST_FILE_NUMBERS_COUNT 10

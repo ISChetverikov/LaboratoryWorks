@@ -81,6 +81,7 @@ int WriteFirstResult(char * filename, double result, int N) {
 	fseek(pFile, position, SEEK_SET);
 	fprintf_s(pFile, "{RESULT = %lf} %s", result, buffer);
 
+	free(buffer);
 	fclose(pFile);
 
 	return 0;
@@ -95,7 +96,7 @@ int CreateFirstFile(char * filename, int numbersCount) {
 		return -1;
 
 	for (int i = 0; i < numbersCount; i++) {
-		fprintf_s(pFile, "%lf ", (double)rand() / RAND_MAX * 2.0 - 1.0);
+		fprintf_s(pFile, "%lf ", (double)rand() / RAND_MAX * DOUBLE_RAND_LENGTH + DOUBLE_RAND_MIN);
 	}
 
 	fclose(pFile);
@@ -112,6 +113,7 @@ int DoFirstTask(char * filename, int N, double * result) {
 	*result = MulArrElements(arr, numbersCount);
 	WriteFirstResult(filename, *result, N);
 
+	free(arr);
 	return 0;
 }
 

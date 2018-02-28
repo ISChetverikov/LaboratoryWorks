@@ -21,9 +21,15 @@
     <ClCompile Include="FirstTask.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SecondTask.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FirstTask.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SecondTask.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
