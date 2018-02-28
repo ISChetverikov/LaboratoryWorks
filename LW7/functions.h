@@ -1,3 +1,4 @@
+#define DOUBLE_ARRAY_BUFFER 1024
 
 errno_t CreateFirstFile(char * filename, int numbersCount);
-errno_t DoFirstTask(char * filename, int numbersCount, int N, double * result);
+errno_t DoFirstTask(char * filename, int N, double * result);

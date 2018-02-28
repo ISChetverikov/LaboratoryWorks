@@ -13,7 +13,7 @@ int main() {
 	int N = 1;
 
 	CreateFirstFile(FIRST_FILENAME, FIRST_FILE_NUMBERS_COUNT);
-	DoFirstTask(FIRST_FILENAME, FIRST_FILE_NUMBERS_COUNT, N, &result);
+	DoFirstTask(FIRST_FILENAME, N, &result);
 
 	return 0;
 }
