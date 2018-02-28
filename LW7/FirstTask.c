@@ -2,20 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "functions.h"
+#include "FirstTask.h"
 
 #pragma region  FirstTaskImplementation
 
-errno_t ReadFirstFile(char * filename, double ** resultArr, int * numbersCount) {
+int ReadFirstFile(char * filename, double ** resultArr, int * numbersCount) {
 	FILE * pFile;
 	double number;
-	double buffer[1024]; // const
-	errno_t errorCode;
+	double buffer[DOUBLE_ARRAY_BUFFER];
 	int i = 0;
 
-	errorCode = fopen_s(&pFile, filename, "r+");
-	if (errorCode != 0)
-		return errorCode;
+	if(fopen_s(&pFile, filename, "r+"))
+		return -1;
 
 	while (fscanf_s(pFile, "%lf ", &number) != EOF)
 	{
@@ -25,9 +23,9 @@ errno_t ReadFirstFile(char * filename, double ** resultArr, int * numbersCount) 
 
 	*numbersCount = i;
 	*resultArr = calloc(*numbersCount, sizeof(double));
-	errorCode = memcpy_s(*resultArr, (*numbersCount) * sizeof(double), buffer, (*numbersCount) * sizeof(double));
-	if (errorCode != 0)
-		return errorCode;
+	 
+	if (memcpy_s(*resultArr, (*numbersCount) * sizeof(double), buffer, (*numbersCount) * sizeof(double)))
+		return -1;
 
 	fclose(pFile);
 	return 0;
@@ -43,20 +41,18 @@ double MulArrElements(double * arr, int numbersCount) {
 	return result;
 }
 
-errno_t WriteFirstResult(char * filename, double result, int N) {
+int WriteFirstResult(char * filename, double result, int N) {
 
 	FILE * pFile;
-	errno_t errorCode;
 	long position = 0;
 	long fileSize = 0;
 	char * buffer;
 	int i = 0;
 	double number;
 
-	errorCode = fopen_s(&pFile, filename, "r+");
-	if (errorCode != 0)
-		return errorCode;
-
+	if (fopen_s(&pFile, filename, "r+"))
+		return -1;
+	
 	// Estimetion of file size
 	fseek(pFile, 0, SEEK_END);
 	fileSize = ftell(pFile);
@@ -81,7 +77,7 @@ errno_t WriteFirstResult(char * filename, double result, int N) {
 	fread_s(buffer, fileSize - position, sizeof(char), fileSize - position, pFile);
 	buffer[fileSize - position] = '\0';
 
-	// Output production after Nth element and then remaining part as char *
+	// Output result after Nth element and then remaining part as char *
 	fseek(pFile, position, SEEK_SET);
 	fprintf_s(pFile, "{RESULT = %lf} %s", result, buffer);
 
@@ -90,16 +86,13 @@ errno_t WriteFirstResult(char * filename, double result, int N) {
 	return 0;
 }
 
-errno_t CreateFirstFile(char * filename, int numbersCount) {
+int CreateFirstFile(char * filename, int numbersCount) {
 	FILE * pFile;
-	errno_t errorCode;
 	time_t t;
-
 	srand((unsigned)time(&t));
 
-	errorCode = fopen_s(&pFile, filename, "w+");
-	if (errorCode != 0)
-		return errorCode;
+	if (fopen_s(&pFile, filename, "w+"))
+		return -1;
 
 	for (int i = 0; i < numbersCount; i++) {
 		fprintf_s(pFile, "%lf ", (double)rand() / RAND_MAX * 2.0 - 1.0);
@@ -110,7 +103,7 @@ errno_t CreateFirstFile(char * filename, int numbersCount) {
 	return 0;
 }
 
-errno_t DoFirstTask(char * filename, int N, double * result) {
+int DoFirstTask(char * filename, int N, double * result) {
 
 	double* arr;
 	int numbersCount;
