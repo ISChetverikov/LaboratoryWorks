@@ -180,7 +180,6 @@ int WriteSecondFile(char * outputFilename, char ** strings, int stringsCount) {
 	fclose(pFile);
 }
 
-// TODO: binary
 int DoRoutine(char *** strings, int * stringsCount) {
 	char * resultBuffer[STRING_ARRAY_BUFFER_SIZE];
 	char ** result;
