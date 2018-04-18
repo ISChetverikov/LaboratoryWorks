@@ -4,7 +4,7 @@
 #include <string.h>
 #include <locale.h>
 
-#define LAZY_USER
+#define LAZY_USER1
 
 int main() {
 	Patient patient;
