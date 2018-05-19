@@ -7,7 +7,8 @@ int main() {
 	printf_s("Test program!\n");
 
 	char text[512] = "CREATE TABLE test ( Name STRING, age INT, sex INT )";
-	int r = queryHandler(text);
+	char text2[512] = "INSERT INTO test ( 'Крошка Крошкович Крошков', 18, 0)";
+	int r = queryHandler(text2);
 
 	printf_s("%d", r);
 
