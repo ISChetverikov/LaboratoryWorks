@@ -199,17 +199,21 @@ int querySelect(char * query) {
 
 	token = strtok_s(NULL, " ", &context);
 	if (token == NULL) {
-		Select(tableName, &rows, &rowsCount);
+		Select(tableName, &rows, &rowsCount, NULL);
 		PrintTable(tableHeader, rows, rowsCount);
+
 		free(tableName);
 		free(queryCopy);
-		return -1;
+		return 0;
 	}
 
 	token = strtok_s(NULL, " ", &context);
 	ConditionFromText(token, tableHeader, &condition);
-	SelectWhere(tableName, condition);
+	Select(tableName, &rows, &rowsCount, &condition);
 
+	PrintTable(tableHeader, rows, rowsCount);
+	free(tableName);
+	free(queryCopy);
 	return 0;
 }
 
@@ -227,6 +231,11 @@ void PrintTable(TableHeader tableheader, Row * rows, int rowsCount) {
 	int margin = 0;
 	int leftMargin = 0;
 	int rightMargin = 0;
+
+	for (int j = 0; j < columnsCount; j++)
+	{
+		widths[j] = strlen(tableheader.fieldsArr[j].name);
+	}
 
 	for (int i = 0; i < rowsCount; i++)
 	{

@@ -109,6 +109,7 @@ void InsertTable(char * name, Row data) {
 	char * filename;
 	int bufferSize = 0;
 
+	// aldsfjalsdhfjl
 	bufferSize = strnlen_s(name, FILENAME_MAX) + sizeof(TABLE_NAME_EXT) + 1;
 	filename = calloc(bufferSize, sizeof(char));
 	strcpy_s(filename, bufferSize, name);
@@ -129,14 +130,17 @@ void DeleteWhere(char * name, FieldHeader field, void * value) {
 	return;
 }
 
-int Select(char * name, Row ** rows, int * rowsCount) {
+int Select(char * name, Row ** rows, int * rowsCount, Condition* condition) {
 
 	FILE * pFile;
 	char * filename;
 	TableHeader tableHeader;
 	Row row;
 	int i = 0;
+	int j = 0;
+	int isWhere = 0;
 
+	isWhere = condition != NULL;
 	*rows = calloc(0, sizeof(Row));
 	filename = GetFileName(name);
 
@@ -148,9 +152,23 @@ int Select(char * name, Row ** rows, int * rowsCount) {
 
 	tableHeader = GetTableHeader(name, pFile);
 
+	if (isWhere) {
+		for (j = 0; j < tableHeader.fieldsCount; j++)
+		{
+			if (!strcmp(condition->fieldHeader.name, tableHeader.fieldsArr[j].name)
+				&& condition->fieldHeader.type == tableHeader.fieldsArr[j].type)
+				break;
+		}
+		if (j == tableHeader.fieldsCount)
+			return -1;
+	}
+	
 	while(ftell(pFile)< fileSize)
 	{
 		GetDataFromFile(pFile, tableHeader, &row);
+		if (isWhere && !isEqual(row.cellsArr[j], condition->cell, condition->fieldHeader.type))
+			continue;
+
 		*rows = realloc(*rows, (i + 1)* sizeof(Row));
 		(*rows)[i] = row;
 		i++;
@@ -163,21 +181,6 @@ int Select(char * name, Row ** rows, int * rowsCount) {
 	return i;
 }
 
-void SelectWhere(char * name, Condition condition) {
-
-	FILE * pFile;
-	char * filename;
-	
-	filename = GetFileName(name);
-
-	int er = fopen_s(&pFile, filename, "rb");
-	GetTableHeader(name, pFile);
-	
-	free(filename);
-	fclose(pFile);
-	
-	return;
-}
 
 TableHeader GetTableHeader(char * tableName, FILE * pFile) {
 
@@ -297,7 +300,7 @@ void * GetValueFromString(char * str, TYPE type, int * size) {
 	if (type == INT) {
 		result = calloc(1, sizeof(int));
 		size[0] = sizeof(int);
-		((int*)result)[0] = (int *)str[0];
+		((int*)result)[0] = *(int *)str;
 
 		return result;
 	}
@@ -485,4 +488,30 @@ char * BinaryToStringValue(Cell cell, TYPE type) {
 	}
 
 	return result;
+}
+
+int isEqual(Cell left, Cell right, TYPE type) {
+	char * leftStr;
+	char * rightStr;
+	int result = 0;
+
+	switch (type)
+	{
+	case STRING:
+		leftStr = calloc(left.size + 1, sizeof(char));
+		rightStr = calloc(right.size + 1, sizeof(char));
+		strcpy_s(leftStr, left.size, left.value);
+		strcpy_s(leftStr, right.size, right.value);
+		
+		result = !strcmp(leftStr, rightStr);
+		free(leftStr);
+		free(rightStr);
+		return result;
+	case INT:
+		return *(int*)left.value == *(int*)right.value;
+	default:
+		break;
+	}
+
+	return 0;
 }

@@ -37,8 +37,7 @@ typedef struct Condition {
 
 void CreateTable(char * name, TableHeader columns);
 void InsertTable(char * name, Row values);
-int Select(char * name, Row ** rows, int * rowsCount);
-void SelectWhere(char * name, Condition condition);
+int Select(char * name, Row ** rows, int * rowsCount, Condition * condition);
 void DeleteWhere(char * name, FieldHeader field, void * value);
 
 // Helpers
