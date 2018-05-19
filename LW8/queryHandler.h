@@ -1,0 +1,1 @@
+int queryHandler(char * text);
