@@ -19,6 +19,9 @@ int queryHandler(char * query) {
 	if (!strcmp(token, "INSERT"))
 		return queryInsert(query);
 
+	if (!strcmp(token, "SELECT"))
+		return querySelect(query);
+
 	free(copy);
 	return 0;
 }
@@ -101,8 +104,8 @@ int queryInsert(char * query) {
 	char * p2;
 
 	Row row;
-
 	TableHeader tableHeader;
+
 	queryCopy = calloc(strlen(query) + 1, sizeof(char));
 	strcpy_s(queryCopy, strlen(query) + 1, query);
 
@@ -143,7 +146,7 @@ int queryInsert(char * query) {
 	memcpy_s(fields, p2 - p1, p1, p2 - p1);
 	fields[p2 - p1] = '\0';
 
-	tableHeader = GetTableHeader(tableName);
+	tableHeader = GetTableHeader(tableName, NULL);
 	FitDataWithHeader(&row, tableHeader, fields);
 	InsertTable(tableName, row);
 
@@ -153,38 +156,96 @@ int queryInsert(char * query) {
 	return 0;
 }
 
-// ѕровер€ем соответствие вставл€емых данных с заголовком таблицы(возврат Row)
-int FitDataWithHeader(Row * row, TableHeader tableHeader, char * fields) {
-	Cell * cellsArr;
-	int i = 0;
-	char * context;
-	char * token;
-	void * tempData;
-	int tempDataSize = 0;
+int querySelect(char * query) {
 
-	cellsArr = calloc(tableHeader.fieldsCount, sizeof(Cell));
-	token = strtok_s(fields, ",", &context);
-	
-	while (token != NULL)
-	{
-		tempData = StringValueToBinary(token, tableHeader.fieldsArr[i].type, &tempDataSize);
+	char * context, * context2;
+	char * token, * token2;
+	char * tableName;
+	char * queryCopy;
+	char * fields;
+	TableHeader tableHeader;
+	Condition condition;
 
-		cellsArr[i].value = calloc(tempDataSize, 1);
-		memcpy_s(cellsArr[i].value, tempDataSize, tempData, tempDataSize);
-		cellsArr[i].size = tempDataSize;
+	Row * rows;
+	int rowsCount = 0;
 
-		i++;
-		token = strtok_s(NULL, ",", &context);
-		free(tempData);
+	queryCopy = calloc(strlen(query) + 1, sizeof(char));
+	strcpy_s(queryCopy, strlen(query) + 1, query);
+
+	token = strtok_s(queryCopy, " ", &context);
+	if (strcmp(token, "SELECT")) {
+		free(queryCopy);
+		return -1;
 	}
 
-	if (i != tableHeader.fieldsCount) {
-		row = NULL;
-		return 0;
+	token = strtok_s(NULL, " ", &context);
+	if (strcmp(token, "*")) {
+		free(queryCopy);
+		return -1;
 	}
 
-	row->cellsArr = cellsArr;
-	row->cellsCount = tableHeader.fieldsCount;
+	token = strtok_s(NULL, " ", &context);
+	if (strcmp(token, "FROM")) {
+		free(queryCopy);
+		return -1;
+	}
+
+	token = strtok_s(NULL, " ", &context);
+	tableName = calloc(strlen(token) + 1, sizeof(char));
+	strcpy_s(tableName, strlen(token) + 1, token);
+
+	tableHeader = GetTableHeader(tableName, NULL);
+
+	token = strtok_s(NULL, " ", &context);
+	if (token == NULL) {
+		Select(tableName, &rows, &rowsCount);
+		PrintTable(tableHeader, rows, rowsCount);
+		free(tableName);
+		free(queryCopy);
+		return -1;
+	}
+
+	token = strtok_s(NULL, " ", &context);
+	ConditionFromText(token, tableHeader, &condition);
+	SelectWhere(tableName, condition);
 
 	return 0;
+}
+
+void PrintTable(TableHeader tableheader, Row * rows, int rowsCount) {
+
+	TYPE type;
+	int width;
+	int columnsCount = tableheader.fieldsCount;
+	int * widths = calloc(columnsCount, sizeof(int));
+	int tableWidth = 1024;
+	int maxWidth = 0;
+	int maxWidthIndex = 0;
+
+	for (int j = 0; j < rowsCount; j++)
+	{
+		for (int i = 0; i < columnsCount; i++)
+		{
+			width = GetLength(rows[i].cellsArr[j], tableheader.fieldsArr[i].type);
+
+			if (width > widths[i])
+				widths[i] = width;
+		}
+	}
+
+	while (tableWidth > 80) {
+		for (int i = 0; i < columnsCount; i++)
+		{
+			if (maxWidth < widths[i]) {
+				maxWidth = widths[i];
+				maxWidthIndex = i;
+			}
+				
+			tableWidth += width + 2; // «а черточку с пробелом
+		}
+	}
+	
+	
+
+	return;
 }

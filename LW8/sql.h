@@ -1,4 +1,8 @@
+
+
 #pragma once
+
+#include <stdio.h>
 
 #define BUFFER_SIZE 1024
 
@@ -12,6 +16,7 @@ typedef struct FieldHeader {
 typedef struct TableHeader {
 	FieldHeader * fieldsArr;
 	int fieldsCount;
+	//char * tableName;
 } TableHeader;
 
 typedef struct Cell {
@@ -19,19 +24,29 @@ typedef struct Cell {
 	int size;
 } Cell;
 
+
 typedef struct Row {
 	Cell * cellsArr;
 	int cellsCount;
 } Row;
 
-
-TableHeader global_tableHeader;
+typedef struct Condition {
+	FieldHeader fieldHeader;
+	Cell cell;
+} Condition;
 
 void CreateTable(char * name, TableHeader columns);
 void InsertTable(char * name, Row values);
+int Select(char * name, Row ** rows, int * rowsCount);
+void SelectWhere(char * name, Condition condition);
 void DeleteWhere(char * name, FieldHeader field, void * value);
-TableHeader GetTableHeader(char * tableName);
+
+// Helpers
+TableHeader GetTableHeader(char * tableName, FILE * pFile);
 char * GetFileName(char * tableName);
 TYPE StringToType(char * typeStr);
 void * StringValueToBinary(char * text, TYPE type, int * dataSize);
-void * ValueToBinary(void * value, TYPE type, int * dataSize);
+int FitDataWithHeader(Row * row, TableHeader tableHeader, char * fields);
+int ConditionFromText(char * conditionText, TableHeader tableHeader, Condition * condition);
+void * GetValueFromString(char * str, TYPE type, int * size);
+int GetLength(Cell cell, TYPE type);

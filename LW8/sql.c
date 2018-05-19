@@ -5,8 +5,9 @@
 #include <string.h>
 
 #define TABLE_NAME_EXT ".tdb"
+#define DELIMITER ';'
 
-// поле1(тип);
+// поле1(тип)
 void WriteFields(FILE * pFile, TableHeader columns) {
 
 	char * buffer;
@@ -98,7 +99,6 @@ void CreateTable(char * name, TableHeader columns) {
 	fopen_s(&pFile, filename, "wb");
 
 	WriteFields(pFile, columns);
-	global_tableHeader = columns;
 
 	free(filename);
 	fclose(pFile);
@@ -129,25 +129,49 @@ void DeleteWhere(char * name, FieldHeader field, void * value) {
 	return;
 }
 
-void SelectWhere(char * name, char * fieldName, void * value) {
+int Select(char * name, Row ** rows, int * rowsCount) {
 
 	FILE * pFile;
 	char * filename;
-	int bufferSize = 0;
-	int numberOfField = 0;
+	TableHeader tableHeader;
+	Row row;
+	int i = 0;
 
-	bufferSize = strnlen_s(name, FILENAME_MAX) + sizeof(TABLE_NAME_EXT) + 1;
-	filename = calloc(bufferSize, sizeof(char));
-	strcpy_s(filename, bufferSize, name);
-	strcat_s(filename, bufferSize, TABLE_NAME_EXT);
+	*rows = calloc(0, sizeof(Row));
+	filename = GetFileName(name);
+
+	fopen_s(&pFile, filename, "rb");
+
+	fseek(pFile, 0, SEEK_END);
+	int fileSize = ftell(pFile);
+	fseek(pFile, 0, SEEK_SET);
+
+	tableHeader = GetTableHeader(name, pFile);
+
+	while(ftell(pFile)< fileSize)
+	{
+		GetDataFromFile(pFile, tableHeader, &row);
+		*rows = realloc(*rows, (i + 1)* sizeof(Row));
+		(*rows)[i] = row;
+		i++;
+	}
+	((int *)rowsCount)[0] = i;
+
+	free(filename);
+	fclose(pFile);
+
+	return i;
+}
+
+void SelectWhere(char * name, Condition condition) {
+
+	FILE * pFile;
+	char * filename;
+	
+	filename = GetFileName(name);
 
 	int er = fopen_s(&pFile, filename, "rb");
-	
-	for (int i = 0; i < global_tableHeader.fieldsCount; i++)
-	{
-		if (strcmp(global_tableHeader.fieldsArr[i].name, fieldName))
-			numberOfField = i;
-	}
+	GetTableHeader(name, pFile);
 	
 	free(filename);
 	fclose(pFile);
@@ -155,9 +179,8 @@ void SelectWhere(char * name, char * fieldName, void * value) {
 	return;
 }
 
-TableHeader GetTableHeader(char * tableName) {
+TableHeader GetTableHeader(char * tableName, FILE * pFile) {
 
-	FILE * pFile;
 	char * filename;
 	int numberOfField = 0;
 	TableHeader tableHeader;
@@ -169,13 +192,19 @@ TableHeader GetTableHeader(char * tableName) {
 	int i, j;
 	FieldHeader * arr;
 	int fieldsCount;
+	int isNeedOpenFile = 0;
+	//tableHeader.tableName = calloc(strlen(tableName) + 1, sizeof(char));
+	//strcpy_s(tableHeader.tableName, strlen(tableName) + 1, tableName);
+
+	isNeedOpenFile = (pFile == NULL);
 
 	arr = calloc(0, sizeof(FieldHeader));
 	fieldsCount = 0;
 
 	filename = GetFileName(tableName);
 
-	fopen_s(&pFile, filename, "rb");
+	if (isNeedOpenFile)
+		fopen_s(&pFile, filename, "rb");
 	fread_s(buffer, BUFFER_SIZE, sizeof(char), BUFFER_SIZE, pFile);
 	
 	j = 0;
@@ -204,19 +233,76 @@ TableHeader GetTableHeader(char * tableName) {
 		arr[fieldsCount].type = type;
 		fieldsCount++;
 	}
+	fseek(pFile, j + 1, SEEK_SET);
 
 	tableHeader.fieldsArr = arr;
 	tableHeader.fieldsCount = fieldsCount;
 
 	free(filename);
-	fclose(pFile);
+	if (isNeedOpenFile)
+		fclose(pFile);
 
 	return tableHeader;
 }
 
-char * GetDataFromFile(FILE * pFile) {
+int GetDataFromFile(FILE * pFile, TableHeader tableHeader, Row * row) {
+	
+	char buffer[BUFFER_SIZE];
+	TYPE type;
+	int size;
+	void * tempValue;
+	Cell * arr;
+	int i = 0;
+	char * p;
+	long position;
 
-	return;
+	arr = calloc(tableHeader.fieldsCount, sizeof(Cell));
+
+	position = ftell(pFile);
+	fread_s(buffer, BUFFER_SIZE, sizeof(char), BUFFER_SIZE, pFile);
+	p = buffer;
+
+	while (*p != '\n') 
+	{
+		tempValue = GetValueFromString(p, tableHeader.fieldsArr[i].type, &size);
+		arr[i].value = tempValue;
+		arr[i].size = size;
+
+		p = p + size + 1;
+		i++;
+	}
+	row->cellsCount = i;
+	row->cellsArr = arr;
+
+	fseek(pFile, position + p - buffer + 1, SEEK_SET);
+	return 0;
+}
+
+void * GetValueFromString(char * str, TYPE type, int * size) {
+	void * result;
+	int length = 0;
+	void * p;
+
+	if (type == STRING) {
+		p = memchr(str, DELIMITER, BUFFER_SIZE);
+		length = (char*)p - str;
+		size[0] = length;
+
+		result = calloc(length, sizeof(char));
+		memcpy_s(result, length, str, length);
+
+		return result;
+	}
+
+	if (type == INT) {
+		result = calloc(1, sizeof(int));
+		size[0] = sizeof(int);
+		((int*)result)[0] = (int *)str[0];
+
+		return result;
+	}
+
+	return NULL;
 }
 
 // Helpers
@@ -272,4 +358,105 @@ void * StringValueToBinary(char * text, TYPE type, int * dataSize) {
 
 	return NULL;
 
+}
+
+// Проверяем соответствие вставляемых данных с заголовком таблицы(возврат Row)
+int FitDataWithHeader(Row * row, TableHeader tableHeader, char * fields) {
+	Cell * cellsArr;
+	int i = 0;
+	char * context;
+	char * token;
+	void * tempData;
+	int tempDataSize = 0;
+
+	cellsArr = calloc(tableHeader.fieldsCount, sizeof(Cell));
+	token = strtok_s(fields, ",", &context);
+
+	while (token != NULL)
+	{
+		tempData = StringValueToBinary(token, tableHeader.fieldsArr[i].type, &tempDataSize);
+
+		cellsArr[i].value = calloc(tempDataSize, 1);
+		memcpy_s(cellsArr[i].value, tempDataSize, tempData, tempDataSize);
+		cellsArr[i].size = tempDataSize;
+
+		i++;
+		token = strtok_s(NULL, ",", &context);
+		free(tempData);
+	}
+
+	if (i != tableHeader.fieldsCount) {
+		row = NULL;
+		return 0;
+	}
+
+	row->cellsArr = cellsArr;
+	row->cellsCount = tableHeader.fieldsCount;
+
+	return 0;
+}
+
+// Перевод условия из текста в тип COndition
+int ConditionFromText(char * conditionText, TableHeader tableHeader, Condition * condition) {
+	char * copy;
+	char * context;
+	char * name, * valueStr;
+	int i = 0;
+
+	FieldHeader fieldHeader;
+	Cell cell;
+
+	copy = calloc(strlen(conditionText) + 1, sizeof(char));
+	strcpy_s(copy, strlen(conditionText) + 1, conditionText);
+
+	name = strtok_s(copy, "=", &context);
+	if (name == NULL) {
+		free(copy);
+		return -1;
+	}
+	
+	for (i = 0; i < tableHeader.fieldsCount; i++)
+	{
+		if (!strcmp(tableHeader.fieldsArr[i].name, name))
+			break;
+	}
+	if(i == tableHeader.fieldsCount) {
+		free(copy);
+		return -1;
+	}
+	fieldHeader = tableHeader.fieldsArr[i];
+
+	valueStr = strtok_s(NULL, "=", &context);
+	if (valueStr == NULL) {
+		free(copy);
+		return -1;
+	}
+	cell.value = StringValueToBinary(valueStr, fieldHeader.type, &cell.size);
+	condition->cell = cell;
+	condition->fieldHeader = fieldHeader;
+
+	free(copy);
+	return 0;
+}
+
+int GetLength(Cell cell, TYPE type) {
+	int result = 0;
+	int remain;
+
+	switch (type)
+	{
+	case STRING:
+		return cell.size;
+	case INT:
+		remain = *(int*)cell.value;
+		while (remain != 0)
+		{
+			remain / 10;
+			result++;
+		}
+
+		return result;
+	default:
+		return result;
+	}
 }
