@@ -441,17 +441,21 @@ int ConditionFromText(char * conditionText, TableHeader tableHeader, Condition *
 
 int GetLength(Cell cell, TYPE type) {
 	int result = 0;
-	int remain;
+	int remain = 0;
 
 	switch (type)
 	{
 	case STRING:
 		return cell.size;
 	case INT:
-		remain = *(int*)cell.value;
+		
+		remain = *((int*)cell.value);
+		if (remain == 0)
+			return 1;
+
 		while (remain != 0)
 		{
-			remain / 10;
+			remain = remain / 10;
 			result++;
 		}
 
@@ -459,4 +463,26 @@ int GetLength(Cell cell, TYPE type) {
 	default:
 		return result;
 	}
+}
+
+char * BinaryToStringValue(Cell cell, TYPE type) {
+	char * result = NULL;
+	char buffer[33];
+	switch (type)
+	{
+	case STRING:
+		result = calloc(cell.size + 1, sizeof(char));
+		memcpy_s(result, cell.size, cell.value, cell.size);
+		result[cell.size] = '\0';
+
+		break;
+	case INT:
+		_itoa_s(*(int *)cell.value, buffer, 33, 10);
+		result = calloc(strlen(buffer) + 1, sizeof(char));
+		strcpy_s(result, strlen(buffer) + 1, buffer);
+	default:
+		break;
+	}
+
+	return result;
 }

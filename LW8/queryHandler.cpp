@@ -1,6 +1,7 @@
 #include "sql.h"
 #include <string.h>
 #include <stdlib.h>
+#include "queryHandler.h"
 
 // Начало обработки запроса
 int queryHandler(char * query) {
@@ -218,22 +219,29 @@ void PrintTable(TableHeader tableheader, Row * rows, int rowsCount) {
 	int width;
 	int columnsCount = tableheader.fieldsCount;
 	int * widths = calloc(columnsCount, sizeof(int));
-	int tableWidth = 1024;
+	int tableWidth = 81;
 	int maxWidth = 0;
 	int maxWidthIndex = 0;
+	char * cellText;
 
-	for (int j = 0; j < rowsCount; j++)
+	int margin = 0;
+	int leftMargin = 0;
+	int rightMargin = 0;
+
+	for (int i = 0; i < rowsCount; i++)
 	{
-		for (int i = 0; i < columnsCount; i++)
+		for (int j = 0; j < columnsCount; j++)
 		{
-			width = GetLength(rows[i].cellsArr[j], tableheader.fieldsArr[i].type);
+			width = GetLength(rows[i].cellsArr[j], tableheader.fieldsArr[j].type);
 
-			if (width > widths[i])
-				widths[i] = width;
+			if (width > widths[j])
+				widths[j] = width;
 		}
 	}
 
 	while (tableWidth > 80) {
+		tableWidth = 0;
+
 		for (int i = 0; i < columnsCount; i++)
 		{
 			if (maxWidth < widths[i]) {
@@ -241,11 +249,91 @@ void PrintTable(TableHeader tableheader, Row * rows, int rowsCount) {
 				maxWidthIndex = i;
 			}
 				
-			tableWidth += width + 2; // За черточку с пробелом
+			tableWidth += widths[i] + 2; // За черточку с пробелом
 		}
+		tableWidth += 2;
+
+		if (tableWidth > 80)
+			widths[maxWidthIndex] = (maxWidth % 2 == 0) ? maxWidth / 2 : maxWidth / 2 + 1;
 	}
 	
+	// Линия
+	printf_s("\n+");
+	for (int i = 0; i < columnsCount; i++)
+	{
+		for (int j = 0; j < widths[i] + 2; j++)
+		{
+			printf_s("-");
+		}
+		printf_s("+");
+	}
+	printf_s("\n");
+
+	// Шапка
+	printf_s("|");
+
+	for (int j = 0; j < columnsCount; j++)
+	{
+		cellText = tableheader.fieldsArr[j].name;
+
+		margin = widths[j] + 2 - strlen(cellText);
+		leftMargin = margin/2;
+		rightMargin = (margin % 2 == 0) ? margin/2 : margin/2 + 1;
+
+		for (int k = 0; k < leftMargin; k++) {
+			printf_s(" ");
+		}
+		printf_s("%s", cellText);
+		for (int k = 0; k < rightMargin; k++) {
+			printf_s(" ");
+		}
+		printf_s("|");
+
+		free(cellText);
+	}
+	printf_s("\n");
 	
+	// Линия
+	printf_s("+");
+	for (int i = 0; i < columnsCount; i++)
+	{
+		for (int j = 0; j < widths[i] + 2; j++)
+		{
+			printf_s("-");
+		}
+		printf_s("+");
+	}
+	printf_s("\n");
+
+	// Сама таблица
+	for (int i = 0; i < rowsCount; i++)
+	{
+		printf_s("|");
+		
+		for (int j = 0; j < columnsCount; j++)
+		{
+			cellText = BinaryToStringValue(rows[i].cellsArr[j], tableheader.fieldsArr[j].type);
+			printf_s(" %s", cellText);
+			for (int k = 0; k < widths[j] + 2 - strlen(cellText) - 1; k++) {
+				printf_s(" ");
+			}
+			printf_s("|");
+			free(cellText);
+		}
+		printf_s("\n");
+	}
+
+	// Линия
+	printf_s("+");
+	for (int i = 0; i < columnsCount; i++)
+	{
+		for (int j = 0; j < widths[i] + 2; j++)
+		{
+			printf_s("-");
+		}
+		printf_s("+");
+	}
+	printf_s("\n");
 
 	return;
 }

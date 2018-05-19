@@ -50,3 +50,4 @@ int FitDataWithHeader(Row * row, TableHeader tableHeader, char * fields);
 int ConditionFromText(char * conditionText, TableHeader tableHeader, Condition * condition);
 void * GetValueFromString(char * str, TYPE type, int * size);
 int GetLength(Cell cell, TYPE type);
+char * BinaryToStringValue(Cell cell, TYPE type);
