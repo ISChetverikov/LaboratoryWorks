@@ -13,15 +13,14 @@ int main() {
 	char text3[512] = "INSERT INTO test1 ( 'Хуй', 121, 'Москва asdf asdfывsdf asdf asdf asdf asdf')";
 	char text4[512] = "INSERT INTO test1 ( 'Внешняя паркова', 18, 'Москва asdf фываsdf asdf asdf asdf')";
 	char text5[512] = "INSERT INTO test1 ( 'Интеллегенция', 180, 'Моаыфываasdf')";
-	char text6[512] = "SELECT * FROM test1";
-	char text7[512] = "DELETE FROM test1 WHERE Age=180";
+	char text6[512] = "SELECT * FROM test1 WHERE publisher='Москвав asdf asdf asdf asdf asdf asdf asdf'";
+	char text7[512] = "DELETE FROM test1 WHERE publisher='Москва asdf фываsdf asdf asdf asdf'";
 
-	
 	//r = queryHandler(text);
-	r = queryHandler(text2);
+	/*r = queryHandler(text2);
 	r = queryHandler(text3);
 	r = queryHandler(text4);
-	r = queryHandler(text5);
+	r = queryHandler(text5);*/
 
 	r = queryHandler(text7);
 	r = queryHandler(text6);

@@ -152,6 +152,8 @@ void Delete(char * name, int * rowsCount, Condition * condition) {
 	tableHeader = GetTableHeader(name, pFile);
 	if (!isWhere) {
 		_chsize_s(_fileno(pFile), ftell(pFile));
+		free(filename);
+		fclose(pFile);
 		return 0;
 	}
 	
@@ -279,8 +281,9 @@ TableHeader GetTableHeader(char * tableName, FILE * pFile) {
 
 	filename = GetFileName(tableName);
 
+	int er;
 	if (isNeedOpenFile)
-		fopen_s(&pFile, filename, "rb");
+		er = fopen_s(&pFile, filename, "rb");
 	fread_s(buffer, BUFFER_SIZE, sizeof(char), BUFFER_SIZE, pFile);
 	
 	j = 0;
@@ -573,9 +576,11 @@ int isEqual(Cell left, Cell right, TYPE type) {
 	case STRING:
 		leftStr = calloc(left.size + 1, sizeof(char));
 		rightStr = calloc(right.size + 1, sizeof(char));
-		strcpy_s(leftStr, left.size, left.value);
-		strcpy_s(leftStr, right.size, right.value);
-		
+		memcpy_s(leftStr, left.size + 1, left.value, left.size + 1);
+		memcpy_s(rightStr, right.size + 1, right.value, right.size + 1);
+		leftStr[left.size] = '\0';
+		rightStr[right.size] = '\0';
+
 		result = !strcmp(leftStr, rightStr);
 		free(leftStr);
 		free(rightStr);

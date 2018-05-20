@@ -215,8 +215,8 @@ int querySelect(char * query) {
 		return 1;
 	}
 
-	token = strtok_s(NULL, " ", &context);
-	ConditionFromText(token, tableHeader, &condition);
+	// Context - указатель на след токен
+	ConditionFromText(context, tableHeader, &condition);
 	Select(tableName, &rows, &rowsCount, &condition);
 
 	PrintTable(tableHeader, rows, rowsCount);
@@ -259,14 +259,21 @@ int queryDelete(char * query) {
 	tableHeader = GetTableHeader(tableName, NULL);
 
 	token = strtok_s(NULL, " ", &context);
+	if (token == NULL) {
+		Delete(tableName, &rowsCount, NULL);
+
+		free(tableName);
+		free(queryCopy);
+		return 0;
+	}
 	if (strcmp(token, "WHERE")) {
 		free(tableName);
 		free(queryCopy);
 		return -1;
 	}
 
-	token = strtok_s(NULL, " ", &context);
-	ConditionFromText(token, tableHeader, &condition);
+	// Context - указатель на след токен
+	ConditionFromText(context, tableHeader, &condition);
 	Delete(tableName, &rowsCount, &condition);
 
 	free(tableName);
