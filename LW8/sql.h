@@ -32,6 +32,7 @@ typedef struct Row {
 
 typedef struct Condition {
 	FieldHeader fieldHeader;
+	// May be onli number of header?
 	Cell cell;
 } Condition;
 
@@ -39,6 +40,7 @@ void CreateTable(char * name, TableHeader columns);
 void InsertTable(char * name, Row values);
 int Select(char * name, Row ** rows, int * rowsCount, Condition * condition);
 void Delete(char * name, int * rowsCount, Condition * condition);
+void Update(char * name, int * rowsCount, Condition * conditionWhere, Condition * conditionSet);
 
 // Helpers
 TableHeader GetTableHeader(char * tableName, FILE * pFile);
@@ -51,3 +53,4 @@ void * GetValueFromString(char * str, TYPE type, int * size);
 int GetLength(Cell cell, TYPE type);
 char * BinaryToStringValue(Cell cell, TYPE type);
 int MoveFileMemory(FILE * pFile, int positionBefore, int positionAfter, int positionInsert);
+int UpdateFileCell(FILE * pFile, int position, Cell oldCell, Cell newCell);

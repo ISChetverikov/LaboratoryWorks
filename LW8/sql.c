@@ -201,8 +201,6 @@ void Delete(char * name, int * rowsCount, Condition * condition) {
 	free(filename);
 	fclose(pFile);
 
-	return 0;
-
 	return;
 }
 
@@ -255,6 +253,77 @@ int Select(char * name, Row ** rows, int * rowsCount, Condition* condition) {
 	fclose(pFile);
 
 	return 0;
+}
+
+void Update(char * name, int * rowsCount, Condition * conditionWhere, Condition * conditionSet) {
+
+	FILE * pFile;
+	char * filename;
+	TableHeader tableHeader;
+	Row row;
+	int i = 0;
+	int indexWhereField = 0;
+	int indexSetField = 0;
+	int isWhere = 0;
+
+	int fileSize, newFileSize;
+	int position = 0;
+	int oldSize = 0;
+	int newSize = 0;
+
+	filename = GetFileName(name);
+
+	fopen_s(&pFile, filename, "rb+");
+
+	fseek(pFile, 0, SEEK_END);
+	newFileSize = fileSize = ftell(pFile);
+	fseek(pFile, 0, SEEK_SET);
+
+	tableHeader = GetTableHeader(name, pFile);
+
+	for (indexWhereField = 0; indexWhereField < tableHeader.fieldsCount; indexWhereField++)
+	{
+		if (!strcmp(conditionWhere->fieldHeader.name, tableHeader.fieldsArr[indexWhereField].name)
+			&& conditionWhere->fieldHeader.type == tableHeader.fieldsArr[indexWhereField].type)
+			break;
+	}
+	if (indexWhereField == tableHeader.fieldsCount)
+		return -1;
+
+	for (indexSetField = 0; indexSetField < tableHeader.fieldsCount; indexSetField++)
+	{
+		if (!strcmp(conditionSet->fieldHeader.name, tableHeader.fieldsArr[indexSetField].name)
+			&& conditionSet->fieldHeader.type == tableHeader.fieldsArr[indexSetField].type)
+			break;
+	}
+	if (indexSetField == tableHeader.fieldsCount)
+		return -1;
+
+	while (ftell(pFile)< fileSize)
+	{
+		position = ftell(pFile);
+		GetDataFromFile(pFile, tableHeader, &row);
+		
+		int isContidionTrue = isEqual(row.cellsArr[indexWhereField], conditionWhere->cell, conditionWhere->fieldHeader.type);
+		if (isContidionTrue)
+		{
+			for (int i = 0; i < indexSetField; i++)
+			{
+				position += row.cellsArr[i].size + 1;
+			}
+			UpdateFileCell(pFile, position, row.cellsArr[indexSetField], conditionSet->cell, &fileSize);
+		}
+
+	}
+	
+
+
+	((int *)rowsCount)[0] = i;
+
+	free(filename);
+	fclose(pFile);
+
+	return;
 }
 
 TableHeader GetTableHeader(char * tableName, FILE * pFile) {
@@ -614,4 +683,41 @@ int MoveFileMemory(FILE * pFile, int positionBefore, int positionAfter, int posi
 	fseek(pFile, curPosition, SEEK_SET);
 	free(buffer);
 	return 0;
+}
+
+// Запись ячейки в файл. Текущая позиция в файле съедет настолько, насколько разняться ячейки
+int UpdateFileCell(FILE * pFile, int position, Cell oldCell, Cell newCell, int* newFileSize) {
+
+	void * buffer;
+	int length = 0;
+	int curPosition = 0;
+	int delta = 0;
+	int fileSize = 0;
+
+	curPosition = ftell(pFile);
+
+	fseek(pFile, 0, SEEK_END);
+	fileSize = ftell(pFile);
+
+	// Длина оставшегося куска
+	length = fileSize - position - oldCell.size;
+
+	delta = newCell.size - oldCell.size;
+
+	fseek(pFile, position + oldCell.size, SEEK_SET);
+	buffer = calloc(length, 1);
+	fread_s(buffer, length, 1, length, pFile);
+
+	fseek(pFile, position, SEEK_SET);
+	fwrite(newCell.value, 1, newCell.size, pFile);
+	fwrite(buffer, 1, length, pFile);
+
+	fseek(pFile, curPosition + delta, SEEK_SET);
+	if (delta < 0)
+		_chsize_s(_fileno(pFile), fileSize + delta);
+
+	newFileSize[0] = fileSize + delta;
+	free(buffer);
+	return 0;
+
 }

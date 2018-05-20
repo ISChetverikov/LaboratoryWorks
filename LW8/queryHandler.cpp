@@ -26,6 +26,9 @@ int queryHandler(char * query) {
 	if (!strcmp(token, "DELETE"))
 		return queryDelete(query);
 
+	if (!strcmp(token, "UPDATE"))
+		return queryUpdate(query);
+
 	free(copy);
 	return 0;
 }
@@ -275,6 +278,68 @@ int queryDelete(char * query) {
 	// Context - указатель на след токен
 	ConditionFromText(context, tableHeader, &condition);
 	Delete(tableName, &rowsCount, &condition);
+
+	free(tableName);
+	free(queryCopy);
+	return 0;
+}
+
+int queryUpdate(char * query) {
+	char * context, *context2;
+	char * token, *token2;
+	char * tableName;
+	char * queryCopy;
+	char * fields;
+	TableHeader tableHeader;
+	Condition conditionWhere, conditionSet;
+
+	char * p;
+
+	Row * rows;
+	int rowsCount = 0;
+
+	queryCopy = calloc(strlen(query) + 1, sizeof(char));
+	strcpy_s(queryCopy, strlen(query) + 1, query);
+
+	token = strtok_s(queryCopy, " ", &context);
+	if (strcmp(token, "UPDATE")) {
+		free(queryCopy);
+		return -1;
+	}
+
+	token = strtok_s(NULL, " ", &context);
+	if (strcmp(token, "TABLE")) {
+		free(queryCopy);
+		return -1;
+	}
+
+	token = strtok_s(NULL, " ", &context);
+	tableName = calloc(strlen(token) + 1, sizeof(char));
+	strcpy_s(tableName, strlen(token) + 1, token);
+
+	tableHeader = GetTableHeader(tableName, NULL);
+
+	token = strtok_s(NULL, " ", &context);
+	if (strcmp(token, "WHERE")) {
+		free(tableName);
+		free(queryCopy);
+		return -1;
+	}
+
+	// Context - указатель на след токен
+	p = strstr(context, "SET");
+	if (p == NULL) {
+		free(tableName);
+		free(queryCopy);
+		return -1;
+	}
+
+	p[0] = '\0';
+	p += 4; // ѕропуск оставшихс€ букв слова SET
+
+	ConditionFromText(context, tableHeader, &conditionWhere);
+	ConditionFromText(p, tableHeader, &conditionSet);
+	Update(tableName, &rowsCount, &conditionWhere, &conditionSet);
 
 	free(tableName);
 	free(queryCopy);
