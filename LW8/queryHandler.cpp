@@ -39,10 +39,13 @@ int queryHandler(char * query) {
 // Запрос на создание таблицы
 int queryCreate(char * query) {
 
-	char * context;
-	char * token;
+	char * context, *context2, *context3;
+	char * token, *token2, *copyToken;// токен 1 по пробелам, затем по запятым; токен2 по пробелам в названиях полей
 	char * tableName;
 	char * queryCopy;
+	char * p;
+
+	char buffer[BUFFER_SIZE];
 
 	FieldHeader * fieldHeaderArr;
 	int fieldCount = 0;
@@ -74,21 +77,41 @@ int queryCreate(char * query) {
 		return -1;
 	}
 	
-	fieldHeaderArr = calloc(0, sizeof(FieldHeader));
-	token = strtok_s(context, ",", &context);
+	p = strstr(context, ")");
+	if (p == NULL) 
+	{
+		free(tableName);
+		free(queryCopy);
+		return -1;
+	}
+	p[0] = '\0';
 
-	while (token != NULL && strcmp(token, ")"))
+	// в контексте поля с типами через запятую без скобочек
+	fieldHeaderArr = calloc(0, sizeof(FieldHeader));
+	
+	token = strtok_s(context, ",", &context2);
+
+	while (token != NULL)
 	{
 		fieldHeaderArr = realloc(fieldHeaderArr, sizeof(FieldHeader) * (fieldCount + 1));
+		buffer[0] = '\0';
 
-		fieldHeaderArr[fieldCount].name = calloc(strlen(token) + 1 , sizeof(char));
-		strcpy_s(fieldHeaderArr[fieldCount].name, strlen(token) + 1, token);
+		token2 = strtok_s(token, " ", &context3);
+		while (strcmp(context3, ""))
+		{
+			strcat_s(buffer, BUFFER_SIZE, token2);
+			strcat_s(buffer, BUFFER_SIZE, " ");
+			token2 = strtok_s(NULL, " ", &context3);
+		}
+		buffer[strlen(buffer) - 1] = '\0';
+		// токен2 указывает на тип
+		fieldHeaderArr[fieldCount].name = calloc(strlen(buffer)  + 1 , sizeof(char));
+		strcpy_s(fieldHeaderArr[fieldCount].name, strlen(buffer) + 1, buffer);
 
-		token = strtok_s(NULL, ", ", &context);
-		fieldHeaderArr[fieldCount].type = StringToType(token);
-
-		token = strtok_s(NULL, ", ", &context);
+		fieldHeaderArr[fieldCount].type = StringToType(token2);
 		fieldCount++;
+
+		token = strtok_s(NULL, ",", &context2);
 	}
 	tableHeader.fieldsArr = fieldHeaderArr;
 	tableHeader.fieldsCount = fieldCount;

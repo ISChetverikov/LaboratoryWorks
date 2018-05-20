@@ -24,11 +24,11 @@ int main() {
 	char text7[512] = "DELETE FROM test1 WHERE publisher='Москва asdf фываsdf asdf asdf asdf'";
 	char text8[512] = "UPDATE TABLE test1 WHERE Name='Пыщ пыщ' SET Name='Пыщ пыщ ОК'";
 
-	r = queryHandler(text);
+	/*r = queryHandler(text);
 	r = queryHandler(text2);
 	r = queryHandler(text3);
 	r = queryHandler(text4);
-	r = queryHandler(text5);
+	r = queryHandler(text5);*/
 
 	//r = queryHandler(text8);
 	//r = queryHandler(text6);
