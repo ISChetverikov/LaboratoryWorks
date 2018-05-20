@@ -1,5 +1,6 @@
 #include "sql.h"
 #include <stdio.h>
+#include <io.h>
 #include <string.h>
 #include <stdlib.h>
 #include <string.h>
@@ -124,8 +125,81 @@ void InsertTable(char * name, Row data) {
 	fclose(pFile);
 }
 
-void DeleteWhere(char * name, FieldHeader field, void * value) {
+void Delete(char * name, int * rowsCount, Condition * condition) {
 
+	FILE * pFile;
+	char * filename;
+	TableHeader tableHeader;
+	Row row;
+	int i = 0;
+	int j = 0;
+	int isWhere = 0;
+
+	int fileSize, newFileSize;
+	int positionAfter = 0;
+	int positionBefore = 0;
+	int positionInsert = 0;
+
+	isWhere = condition != NULL;
+	filename = GetFileName(name);
+
+	fopen_s(&pFile, filename, "rb+");
+
+	fseek(pFile, 0, SEEK_END);
+	newFileSize = fileSize = ftell(pFile);
+	fseek(pFile, 0, SEEK_SET);
+
+	tableHeader = GetTableHeader(name, pFile);
+	if (!isWhere) {
+		_chsize_s(_fileno(pFile), ftell(pFile));
+		return 0;
+	}
+	
+	for (j = 0; j < tableHeader.fieldsCount; j++)
+	{
+		if (!strcmp(condition->fieldHeader.name, tableHeader.fieldsArr[j].name)
+			&& condition->fieldHeader.type == tableHeader.fieldsArr[j].type)
+			break;
+	}
+	if (j == tableHeader.fieldsCount)
+		return -1;
+	
+
+	while (ftell(pFile)< fileSize)
+	{
+		positionBefore = ftell(pFile);
+		GetDataFromFile(pFile, tableHeader, &row);
+		positionAfter = ftell(pFile);
+		
+		int isContidionTrue = isEqual(row.cellsArr[j], condition->cell, condition->fieldHeader.type);
+		if (isContidionTrue)
+		{
+			if (!positionInsert) {
+				positionInsert = positionBefore;
+				i++;
+			}
+			newFileSize -= positionAfter - positionBefore;
+		}
+
+		if (positionInsert && !isContidionTrue) 
+		{
+			// копировать текущую строку на positionInsert
+			
+			MoveFileMemory(pFile, positionBefore, positionAfter, positionInsert);
+			positionInsert += positionAfter - positionBefore;// Потому что After указывает на конец строки
+		}
+	}
+	if (positionInsert) {
+		_chsize_s(_fileno(pFile), newFileSize);
+	}
+		
+
+	((int *)rowsCount)[0] = i;
+
+	free(filename);
+	fclose(pFile);
+
+	return 0;
 
 	return;
 }
@@ -178,9 +252,8 @@ int Select(char * name, Row ** rows, int * rowsCount, Condition* condition) {
 	free(filename);
 	fclose(pFile);
 
-	return i;
+	return 0;
 }
-
 
 TableHeader GetTableHeader(char * tableName, FILE * pFile) {
 
@@ -513,5 +586,27 @@ int isEqual(Cell left, Cell right, TYPE type) {
 		break;
 	}
 
+	return 0;
+}
+
+// Копирование памяти в файле (positionAfter - указывает на конец строки, Before - на начало)
+int MoveFileMemory(FILE * pFile, int positionBefore, int positionAfter, int positionInsert) {
+
+	void * buffer;
+	int length = 0;
+	int curPosition = 0;
+
+	curPosition = ftell(pFile);
+
+	length = positionAfter - positionBefore + 1;
+	buffer = calloc(length, 1);
+	fseek(pFile, positionBefore, SEEK_SET);
+	fread_s(buffer, length, 1, length, pFile);
+
+	fseek(pFile, positionInsert, SEEK_SET);
+	fwrite(buffer, 1, length, pFile);
+
+	fseek(pFile, curPosition, SEEK_SET);
+	free(buffer);
 	return 0;
 }

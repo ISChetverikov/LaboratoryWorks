@@ -23,6 +23,9 @@ int queryHandler(char * query) {
 	if (!strcmp(token, "SELECT"))
 		return querySelect(query);
 
+	if (!strcmp(token, "DELETE"))
+		return queryDelete(query);
+
 	free(copy);
 	return 0;
 }
@@ -206,12 +209,66 @@ int querySelect(char * query) {
 		free(queryCopy);
 		return 0;
 	}
+	if (strcmp(token, "WHERE")) {
+		free(tableName);
+		free(queryCopy);
+		return 1;
+	}
 
 	token = strtok_s(NULL, " ", &context);
 	ConditionFromText(token, tableHeader, &condition);
 	Select(tableName, &rows, &rowsCount, &condition);
 
 	PrintTable(tableHeader, rows, rowsCount);
+	free(tableName);
+	free(queryCopy);
+	return 0;
+}
+
+int queryDelete(char * query) {
+	char * context, *context2;
+	char * token, *token2;
+	char * tableName;
+	char * queryCopy;
+	char * fields;
+	TableHeader tableHeader;
+	Condition condition;
+
+	Row * rows;
+	int rowsCount = 0;
+
+	queryCopy = calloc(strlen(query) + 1, sizeof(char));
+	strcpy_s(queryCopy, strlen(query) + 1, query);
+
+	token = strtok_s(queryCopy, " ", &context);
+	if (strcmp(token, "DELETE")) {
+		free(queryCopy);
+		return -1;
+	}
+	
+	token = strtok_s(NULL, " ", &context);
+	if (strcmp(token, "FROM")) {
+		free(queryCopy);
+		return -1;
+	}
+
+	token = strtok_s(NULL, " ", &context);
+	tableName = calloc(strlen(token) + 1, sizeof(char));
+	strcpy_s(tableName, strlen(token) + 1, token);
+
+	tableHeader = GetTableHeader(tableName, NULL);
+
+	token = strtok_s(NULL, " ", &context);
+	if (strcmp(token, "WHERE")) {
+		free(tableName);
+		free(queryCopy);
+		return -1;
+	}
+
+	token = strtok_s(NULL, " ", &context);
+	ConditionFromText(token, tableHeader, &condition);
+	Delete(tableName, &rowsCount, &condition);
+
 	free(tableName);
 	free(queryCopy);
 	return 0;

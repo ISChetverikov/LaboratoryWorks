@@ -38,7 +38,7 @@ typedef struct Condition {
 void CreateTable(char * name, TableHeader columns);
 void InsertTable(char * name, Row values);
 int Select(char * name, Row ** rows, int * rowsCount, Condition * condition);
-void DeleteWhere(char * name, FieldHeader field, void * value);
+void Delete(char * name, int * rowsCount, Condition * condition);
 
 // Helpers
 TableHeader GetTableHeader(char * tableName, FILE * pFile);
@@ -50,3 +50,4 @@ int ConditionFromText(char * conditionText, TableHeader tableHeader, Condition *
 void * GetValueFromString(char * str, TYPE type, int * size);
 int GetLength(Cell cell, TYPE type);
 char * BinaryToStringValue(Cell cell, TYPE type);
+int MoveFileMemory(FILE * pFile, int positionBefore, int positionAfter, int positionInsert);
