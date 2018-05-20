@@ -29,6 +29,9 @@ int queryHandler(char * query) {
 	if (!strcmp(token, "UPDATE"))
 		return queryUpdate(query);
 
+	if (!strcmp(token, "FILE"))
+		return queryExecuteScript(query);
+
 	free(copy);
 	return 0;
 }
@@ -48,23 +51,23 @@ int queryCreate(char * query) {
 	queryCopy = calloc(strlen(query) + 1, sizeof(char));
 	strcpy_s(queryCopy, strlen(query) + 1, query);
 
-	token = strtok_s(queryCopy, ", ", &context);
+	token = strtok_s(queryCopy, " ", &context);
 	if (strcmp(token, "CREATE")) {
 		free(queryCopy);
 		return -1;
 	}
 		
-	token = strtok_s(NULL, ", ", &context);
+	token = strtok_s(NULL, " ", &context);
 	if (strcmp(token, "TABLE")) {
 		free(queryCopy);
 		return -1;
 	}
 		
-	token = strtok_s(NULL, ", ", &context);
+	token = strtok_s(NULL, " ", &context);
 	tableName = calloc(strlen(token) + 1, sizeof(char));
 	strcpy_s(tableName, strlen(token) + 1, token);
 
-	token = strtok_s(NULL, ", ", &context);
+	token = strtok_s(NULL, " ", &context);
 	if (strcmp(token, "(")) {
 		free(tableName);
 		free(queryCopy);
@@ -72,7 +75,7 @@ int queryCreate(char * query) {
 	}
 	
 	fieldHeaderArr = calloc(0, sizeof(FieldHeader));
-	token = strtok_s(NULL, ", ", &context);
+	token = strtok_s(context, ",", &context);
 
 	while (token != NULL && strcmp(token, ")"))
 	{
@@ -343,6 +346,54 @@ int queryUpdate(char * query) {
 
 	free(tableName);
 	free(queryCopy);
+	return 0;
+}
+
+int queryExecuteScript(char * query) {
+	char * context;
+	char * token;
+	char * fileName;
+	char * queryCopy;
+
+	FILE * pFile;
+
+	char str[BUFFER_SIZE];
+	char * readStr;
+
+	queryCopy = calloc(strlen(query) + 1, sizeof(char));
+	strcpy_s(queryCopy, strlen(query) + 1, query);
+
+	token = strtok_s(queryCopy, " ", &context);
+	if (strcmp(token, "FILE")) {
+		free(queryCopy);
+		return -1;
+	}
+	
+	token = strtok_s(NULL, " ", &context);
+	fileName = calloc(strlen(token) + 1, sizeof(char));
+	strcpy_s(fileName, strlen(token) + 1, token);
+	fopen_s(&pFile, fileName, "r");
+
+	while (1) {
+		readStr = fgets(str, BUFFER_SIZE, pFile);
+
+		if (readStr == NULL)
+		{
+			if (feof(pFile) != 0)
+			{
+				break;
+			}
+			else
+			{
+				fclose(pFile);
+				return -1;
+			}
+		}
+
+		queryHandler(readStr);
+	}
+
+	free(fileName);
 	return 0;
 }
 

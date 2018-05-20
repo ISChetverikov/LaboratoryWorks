@@ -32,6 +32,9 @@
     <None Include="Test.tdb">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="1.q">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sql.h">

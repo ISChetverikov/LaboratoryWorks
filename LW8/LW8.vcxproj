@@ -125,6 +125,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="base.db" />
+    <None Include="1.q" />
     <None Include="Test.tdb" />
   </ItemGroup>
   <ItemGroup>
