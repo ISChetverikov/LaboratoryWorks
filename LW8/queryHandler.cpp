@@ -10,6 +10,9 @@ int queryHandler(char * query) {
 
 	char * copy;
 
+	if (!strcmp(query, ""))
+		return -1;
+
 	copy = calloc(strlen(query) + 1, sizeof(char));
 	strcpy_s(copy, strlen(query) + 1, query);
 
@@ -31,6 +34,9 @@ int queryHandler(char * query) {
 
 	if (!strcmp(token, "FILE"))
 		return queryExecuteScript(query);
+
+	if (!strcmp(token, "SORT"))
+		return querySort(query);
 
 	free(copy);
 	return 0;
@@ -420,6 +426,39 @@ int queryExecuteScript(char * query) {
 	return 0;
 }
 
+int querySort(char * query) {
+
+	char * context;
+	char * token;
+	char * queryCopy;
+	char * tableName;
+	
+	queryCopy = calloc(strlen(query) + 1, sizeof(char));
+	strcpy_s(queryCopy, strlen(query) + 1, query);
+
+	token = strtok_s(queryCopy, " ", &context);
+	if (strcmp(token, "SORT")) {
+		free(queryCopy);
+		return -1;
+	}
+
+	token = strtok_s(NULL, " ", &context);
+	tableName = calloc(strlen(token) + 1, sizeof(char));
+	strcpy_s(tableName, strlen(token) + 1, token);
+
+	token = strtok_s(NULL, " ", &context);
+	if (strcmp(token, "BY")) {
+		free(queryCopy);
+		return -1;
+	}
+
+	// в контексте лежит название поля, по которому сортируем
+	Sort(tableName, context);
+
+
+	return 0;
+}
+
 void PrintTable(TableHeader tableheader, Row * rows, int rowsCount) {
 
 	TYPE type;
@@ -451,24 +490,27 @@ void PrintTable(TableHeader tableheader, Row * rows, int rowsCount) {
 		}
 	}
 
-	while (tableWidth > 80) {
-		tableWidth = 0;
+	//while (tableWidth > 120) {
+	//	tableWidth = 0;
+	//	maxWidth = 0;
 
-		for (int i = 0; i < columnsCount; i++)
-		{
-			if (maxWidth < widths[i]) {
-				maxWidth = widths[i];
-				maxWidthIndex = i;
-			}
-				
-			tableWidth += widths[i] + 2; // За черточку с пробелом
-		}
-		tableWidth += 2;
+	//	for (int i = 0; i < columnsCount; i++)
+	//	{
+	//		if (maxWidth < widths[i]) {
+	//			maxWidth = widths[i];
+	//			maxWidthIndex = i;
+	//		}
+	//			
+	//		tableWidth += widths[i] + 2; // За черточку с пробелом
+	//	}
+	//	tableWidth += 2;
 
-		if (tableWidth > 80)
-			widths[maxWidthIndex] = (maxWidth % 2 == 0) ? maxWidth / 2 : maxWidth / 2 + 1;
-	}
-	
+	//	if (tableWidth > 80)
+	//		widths[maxWidthIndex] = (maxWidth % 2 == 0) ? maxWidth / 2 : maxWidth / 2 + 1;
+	//}
+	//
+
+
 	// Линия
 	printf_s("\n+");
 	for (int i = 0; i < columnsCount; i++)

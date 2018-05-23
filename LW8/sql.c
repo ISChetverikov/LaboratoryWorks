@@ -116,7 +116,7 @@ void InsertTable(char * name, Row data) {
 	strcpy_s(filename, bufferSize, name);
 	strcat_s(filename, bufferSize, TABLE_NAME_EXT);
 
-	int er = fopen_s(&pFile, filename, "ab+");
+	fopen_s(&pFile, filename, "ab+");
 	fseek(pFile, 0, SEEK_END);
 	
 	AppendData(pFile, data);
@@ -326,6 +326,74 @@ void Update(char * name, int * rowsCount, Condition * conditionWhere, Condition 
 	return;
 }
 
+int Sort(char * tableName, char * fieldName) {
+
+	FILE * pFile;
+	char * fileName;
+	TableHeader tableHeader;
+	int fieldNo;
+	int fileSize;
+	int rowsCount = 0;
+	int positionAfterHeader = 0;
+	Row * rowsArr;
+	Row row;
+	FieldHeader field;
+
+	fileName = GetFileName(tableName);
+	fopen_s(&pFile, fileName, "rb+");
+
+	fseek(pFile, 0, SEEK_END);
+	fileSize = ftell(pFile);
+	fseek(pFile, 0, SEEK_SET);
+
+	tableHeader = GetTableHeader(tableName, pFile);
+	positionAfterHeader = ftell(pFile);
+
+	for (fieldNo = 0; fieldNo < tableHeader.fieldsCount; fieldNo++)
+	{
+		if (!strcmp(fieldName, tableHeader.fieldsArr[fieldNo].name))
+			break;
+	}
+	if (fieldNo == tableHeader.fieldsCount)
+		return -1;
+	field = tableHeader.fieldsArr[fieldNo];
+
+	rowsArr = calloc(0, sizeof(Row));
+	while (ftell(pFile)< fileSize)
+	{
+		GetDataFromFile(pFile, tableHeader, &row);
+		
+		rowsArr = realloc(rowsArr, (rowsCount + 1) * sizeof(Row));
+		rowsArr[rowsCount] = row;
+		rowsCount++;
+	}
+
+	for (int i = 1; i < rowsCount; i++)
+	{
+		for (int j = 0; j < rowsCount - i; j++)
+		{
+			if (Compare(rowsArr[j], rowsArr[j+1], fieldNo, field.type) == 1) {
+				row = rowsArr[j];
+				rowsArr[j] = rowsArr[j + 1];
+				rowsArr[j + 1] = row;
+			}
+		}
+	}
+
+	fseek(pFile, positionAfterHeader, SEEK_SET);
+	for (int i = 0; i < rowsCount; i++){
+		AppendData(pFile, rowsArr[i]);
+	}
+
+	free(fileName);
+	fclose(pFile);
+	return 0;
+}
+
+
+// Helpers
+//=======================================================================
+
 TableHeader GetTableHeader(char * tableName, FILE * pFile) {
 
 	char * filename;
@@ -354,7 +422,7 @@ TableHeader GetTableHeader(char * tableName, FILE * pFile) {
 	if (isNeedOpenFile)
 		er = fopen_s(&pFile, filename, "rb");
 	fread_s(buffer, BUFFER_SIZE, sizeof(char), BUFFER_SIZE, pFile);
-	
+
 	j = 0;
 	c = buffer[j];
 
@@ -394,7 +462,7 @@ TableHeader GetTableHeader(char * tableName, FILE * pFile) {
 }
 
 int GetDataFromFile(FILE * pFile, TableHeader tableHeader, Row * row) {
-	
+
 	char buffer[BUFFER_SIZE];
 	TYPE type;
 	int size;
@@ -410,14 +478,13 @@ int GetDataFromFile(FILE * pFile, TableHeader tableHeader, Row * row) {
 	fread_s(buffer, BUFFER_SIZE, sizeof(char), BUFFER_SIZE, pFile);
 	p = buffer;
 
-	while (*p != '\n') 
+	for (i = 0; i < tableHeader.fieldsCount; i++)
 	{
 		tempValue = GetValueFromString(p, tableHeader.fieldsArr[i].type, &size);
 		arr[i].value = tempValue;
 		arr[i].size = size;
 
 		p = p + size + 1;
-		i++;
 	}
 	row->cellsCount = i;
 	row->cellsArr = arr;
@@ -453,7 +520,6 @@ void * GetValueFromString(char * str, TYPE type, int * size) {
 	return NULL;
 }
 
-// Helpers
 char * GetFileName(char * tableName) {
 	char * filename;
 	int bufferSize = 0;
@@ -720,4 +786,41 @@ int UpdateFileCell(FILE * pFile, int position, Cell oldCell, Cell newCell, int* 
 	free(buffer);
 	return 0;
 
+}
+
+// Функция стравнения типов
+// Return: 1 (Поле первого меньше поля второго), далее понятно...
+int Compare(Row left, Row right, int fieldNo, TYPE type) {
+	char * leftStr;
+	char * rightStr;
+
+	int leftInt = 0;
+	int rightInt = 0;
+	int result = 0;
+
+	switch (type)
+	{
+	case STRING:
+		leftStr = BinaryToStringValue(left.cellsArr[fieldNo], type);
+		rightStr = BinaryToStringValue(right.cellsArr[fieldNo], type);
+
+		result = strcmp(leftStr, rightStr);
+
+		free(leftStr);
+		free(rightStr);
+		break;
+	case INT:
+		rightInt = *(int *)right.cellsArr[fieldNo].value;
+		leftInt = *(int *)left.cellsArr[fieldNo].value;
+
+		result = rightInt == leftInt;
+		if (!result) {
+			result = (rightInt > leftInt) ? -1 : 1;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return result;
 }
