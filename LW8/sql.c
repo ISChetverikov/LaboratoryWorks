@@ -8,82 +8,6 @@
 #define TABLE_NAME_EXT ".tdb"
 #define DELIMITER ';'
 
-// поле1(тип)
-void WriteFields(FILE * pFile, TableHeader columns) {
-
-	char * buffer;
-	
-	void * p = NULL;
-	int nameLength = 0;
-	int TYPE_LENGTH = sizeof(TYPE);
-	int buffer_inc = 0;
-	int newBufferSize = 0;
-
-	buffer = calloc(1, sizeof(char));
-	newBufferSize = 1;
-
-	for (int i = 0; i < columns.fieldsCount; i++)
-	{
-		nameLength = strlen(columns.fieldsArr[i].name);
-		buffer_inc = nameLength + TYPE_LENGTH + 2;
-		newBufferSize += buffer_inc;
-		buffer = realloc(buffer,  newBufferSize * sizeof(char));
-		p = buffer + newBufferSize - buffer_inc - 1; // -1 because it started with 1
-		
-		memcpy_s(p, newBufferSize, columns.fieldsArr[i].name, nameLength);
-		p = (char *)p + nameLength;
-
-		memcpy_s(p, newBufferSize, "(", 1);
-		p = (char*)p + 1;
-
-		int * pType = &columns.fieldsArr[i].type;
-		memcpy_s(p, newBufferSize, pType, TYPE_LENGTH);
-		p = (char *)p + TYPE_LENGTH;
-
-		memcpy_s(p, newBufferSize, ")", 1);
-		p = (char*)p + 1;
-	}
-	memcpy_s(p, newBufferSize, "\n", 1);
-	fwrite(buffer, sizeof(char), newBufferSize, pFile);
-
-	free(buffer);
-	return;
-}
-
-// Запись самих данных
-void AppendData(FILE * pFile, Row data) {
-	char * buffer;
-
-	void * p = NULL;
-	//int tempDataSize= 0;
-	//void * tempData;
-	int buffer_inc = 0;
-	int newBufferSize = 0;
-
-	buffer = calloc(1, sizeof(char));
-	newBufferSize = 1;
-
-	for (int i = 0; i < data.cellsCount; i++)
-	{
-		//tempData = ValueToBinary(data.cellsArr[i].value,  data.cellsArr[i].field->type, &tempDataSize);
-		
-		buffer_inc = data.cellsArr[i].size + 1;
-		newBufferSize += buffer_inc;
-		buffer = realloc(buffer, newBufferSize * sizeof(char));
-		p = buffer + newBufferSize - buffer_inc - 1;
-
-		memcpy_s(p, newBufferSize, data.cellsArr[i].value, data.cellsArr[i].size);
-		p = (char *)p + data.cellsArr[i].size;
-
-		memcpy_s(p, newBufferSize, ";", 1);
-		p = (char*)p + 1;
-	}
-	memcpy_s(p, newBufferSize, "\n", 1);
-	fwrite(buffer, sizeof(char), newBufferSize, pFile);
-
-	free(buffer);
-	return;
-}
 
 // Шапка таблицы: поле1(тип), поле2(тип),...(одна строчка)
 // Затем сами данные
@@ -393,6 +317,83 @@ int Sort(char * tableName, char * fieldName) {
 
 // Helpers
 //=======================================================================
+
+// поле1(тип)
+void WriteFields(FILE * pFile, TableHeader columns) {
+
+	char * buffer;
+
+	void * p = NULL;
+	int nameLength = 0;
+	int TYPE_LENGTH = sizeof(TYPE);
+	int buffer_inc = 0;
+	int newBufferSize = 0;
+
+	buffer = calloc(1, sizeof(char));
+	newBufferSize = 1;
+
+	for (int i = 0; i < columns.fieldsCount; i++)
+	{
+		nameLength = strlen(columns.fieldsArr[i].name);
+		buffer_inc = nameLength + TYPE_LENGTH + 2;
+		newBufferSize += buffer_inc;
+		buffer = realloc(buffer, newBufferSize * sizeof(char));
+		p = buffer + newBufferSize - buffer_inc - 1; // -1 because it started with 1
+
+		memcpy_s(p, newBufferSize, columns.fieldsArr[i].name, nameLength);
+		p = (char *)p + nameLength;
+
+		memcpy_s(p, newBufferSize, "(", 1);
+		p = (char*)p + 1;
+
+		int * pType = &columns.fieldsArr[i].type;
+		memcpy_s(p, newBufferSize, pType, TYPE_LENGTH);
+		p = (char *)p + TYPE_LENGTH;
+
+		memcpy_s(p, newBufferSize, ")", 1);
+		p = (char*)p + 1;
+	}
+	memcpy_s(p, newBufferSize, "\n", 1);
+	fwrite(buffer, sizeof(char), newBufferSize, pFile);
+
+	free(buffer);
+	return;
+}
+
+// Запись самих данных
+void AppendData(FILE * pFile, Row data) {
+	char * buffer;
+
+	void * p = NULL;
+	//int tempDataSize= 0;
+	//void * tempData;
+	int buffer_inc = 0;
+	int newBufferSize = 0;
+
+	buffer = calloc(1, sizeof(char));
+	newBufferSize = 1;
+
+	for (int i = 0; i < data.cellsCount; i++)
+	{
+		//tempData = ValueToBinary(data.cellsArr[i].value,  data.cellsArr[i].field->type, &tempDataSize);
+
+		buffer_inc = data.cellsArr[i].size + 1;
+		newBufferSize += buffer_inc;
+		buffer = realloc(buffer, newBufferSize * sizeof(char));
+		p = buffer + newBufferSize - buffer_inc - 1;
+
+		memcpy_s(p, newBufferSize, data.cellsArr[i].value, data.cellsArr[i].size);
+		p = (char *)p + data.cellsArr[i].size;
+
+		memcpy_s(p, newBufferSize, ";", 1);
+		p = (char*)p + 1;
+	}
+	memcpy_s(p, newBufferSize, "\n", 1);
+	fwrite(buffer, sizeof(char), newBufferSize, pFile);
+
+	free(buffer);
+	return;
+}
 
 TableHeader GetTableHeader(char * tableName, FILE * pFile) {
 

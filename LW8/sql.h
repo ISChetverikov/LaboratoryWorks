@@ -44,6 +44,8 @@ void Update(char * name, int * rowsCount, Condition * conditionWhere, Condition 
 int Sort(char * tableName, char * fieldName);
 
 // Helpers
+void WriteFields(FILE * pFile, TableHeader columns);
+void AppendData(FILE * pFile, Row data);
 TableHeader GetTableHeader(char * tableName, FILE * pFile);
 char * GetFileName(char * tableName);
 TYPE StringToType(char * typeStr);
