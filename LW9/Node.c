@@ -138,7 +138,7 @@ void Print(Node * l) {
 	printf_s("\n");
 }
 
-void Free(Node * l) {
+void FreeAvl(Node * l) {
 	Node * current = l;
 	Node * next = NULL;
 

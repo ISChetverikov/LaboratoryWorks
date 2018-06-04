@@ -9,4 +9,4 @@ typedef struct Node {
 Node * Create(int * coefs, int * degrees, int count);
 Node * Sum(Node * left, Node * right);
 void Print(Node * l);
-void Free(Node * l);
+void FreeAvl(Node * l);

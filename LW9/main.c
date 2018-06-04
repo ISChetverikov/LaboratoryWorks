@@ -22,8 +22,8 @@ int main() {
 	Print(Sum(l1, l2));
 
 
-	Free(l1);
-	Free(l2);
+	FreeAvl(l1);
+	FreeAvl(l2);
 
 	return 0;
 }
